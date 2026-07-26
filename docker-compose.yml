@@ -1,0 +1,32 @@
+# Postgres for the trial-booking POC.
+#
+# Port 55432 on purpose: reviewers often already have something on 5432, and a
+# silent connection to the wrong database is a miserable way to start.
+#
+# No named volume, also on purpose: the invariants are the point of this repo,
+# and stale data between runs is the fastest way to make a passing test lie.
+# `docker compose down` wipes it; `npm run db:reset` rebuilds it in ~1 second.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ottodot_poc_db
+    environment:
+      POSTGRES_USER: ottodot
+      POSTGRES_PASSWORD: ottodot
+      POSTGRES_DB: ottodot
+      # Deterministic timestamps in demo output regardless of host locale.
+      TZ: Asia/Singapore
+      PGTZ: Asia/Singapore
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ottodot -d ottodot"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    command:
+      # Small pool is fine, but the 20-way concurrency test needs headroom.
+      - "postgres"
+      - "-c"
+      - "max_connections=100"

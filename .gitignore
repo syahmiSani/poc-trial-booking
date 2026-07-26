@@ -1,0 +1,35 @@
+# --- node / next ---
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# --- env & secrets ---
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# --- test & tooling output ---
+coverage/
+.vitest/
+test-results/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# --- local database volumes ---
+pgdata/
+*.sqlite
+*.sqlite3
+
+# --- os / editor ---
+~$*
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
