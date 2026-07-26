@@ -6,11 +6,19 @@ expiring hold, money is never captured until a seat is confirmed in a committed
 transaction, and every one of those claims is backed by a test you can run in
 under a minute.
 
-**Time spent: ~3 hours**, tracked per working session rather than estimated
-afterwards. Roughly: 35 min on research, design and diagrams; 20 min on the
-schema and its invariants; 45 min on the booking and payment domain plus tests;
-the remainder on the REST layer, the UI, the testing console and these docs.
-See [what I cut](#what-i-deliberately-cut).
+**Time spent: 3 hours 14 minutes** across five sessions, timed with a stopwatch
+as I worked rather than estimated afterwards:
+
+| | Min | |
+|---|---|---|
+| 1 | 34 | Read the brief, researched Ottodot, design and diagrams, schema, seed, constraint tests, the two-session race proof |
+| 2 | 17 | Booking domain, seat allocation, mock provider, payment orchestration, hold sweeper |
+| 3 | 46 | REST API, booking and roster UI, first testing console, these docs |
+| 4 | 49 | Testing console rebuilt around narrated scenarios, manual verification guides |
+| 5 | 48 | Diagrams realigned to what shipped, Docker image published and verified from a clean machine |
+
+See [what I cut](#what-i-deliberately-cut) for where the remaining 46 minutes of
+the 4 hour budget would have gone.
 
 ---
 
@@ -42,9 +50,11 @@ docker compose up
 
 Pulls [`syahmisani/poc-booking:latest`](https://hub.docker.com/r/syahmisani/poc-booking)
 alongside Postgres, creates the schema, seeds it, and serves on
-**http://localhost:3000**. No Node, no npm, no migrate step. Allow about 45
-seconds the first time, most of it pulling images; a few seconds after that.
-The app logs `16 classes seeded, 0 invariant violations` when it is ready.
+**http://localhost:3000**. No Node, no npm, no migrate step.
+
+Measured on a clean machine: **42 seconds** the first time, most of it pulling
+the two images, and **6 seconds** on later runs once they are cached. The app
+prints `16 classes seeded, 0 invariant violations` when it is ready.
 
 `docker compose down` stops it. Add `-v` to throw the data away as well.
 
@@ -60,7 +70,7 @@ database it is allowed to truncate.
 docker compose up -d db     # Postgres on :55432 (not 5432, avoids collisions)
 npm install
 npm run db:reset            # migrate + seed, prints the seat audit
-npm test                    # 29 tests, including the concurrency suite
+npm test                    # 29 tests in 4 files, ~10s, incl. the concurrency suite
 npm run dev                 # http://localhost:3000
 ```
 
@@ -321,8 +331,8 @@ Card tokens mirror Stripe's test-card convention: `tok_ok`,
 
 ## Tests
 
-29 tests against **real Postgres**, concurrency proven against an in-memory
-fake proves nothing.
+29 tests in 4 files, against **real Postgres**. Concurrency proven against an
+in-memory fake proves nothing.
 
 | File | Covers |
 |---|---|

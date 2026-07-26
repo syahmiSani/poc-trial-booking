@@ -2,7 +2,7 @@
 
 ## Tools
 
-**Claude Opus (Claude Code)** as a pair, driving from a terminal with access to
+**Claude Code** as a pair, driving from a terminal with access to
 the repo, Docker and Postgres. Everything below was verified by running it, not
 by reading it and nodding.
 
@@ -103,7 +103,7 @@ that would have been expensive to discover later in code.
 - A clean-room run of the published image: containers, volumes **and both
   images** deleted, then `docker compose up` followed exactly as the README
   writes it. It pulled from Docker Hub, seeded itself, and reported
-  `16 classes seeded, 0 invariant violations` in 42 seconds. Every scenario was
+  `16 classes seeded, 0 invariant violations` in 42 seconds measured. Every scenario was
   then re-run against that container rather than against my working tree, so
   the thing I am asking you to run is the thing I actually tested.
 
