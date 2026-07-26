@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 export default {
+  // Produces .next/standalone, a self-contained server with only the modules
+  // it actually traced. Keeps the published image small.
+  output: "standalone",
+
   // `pg` is a native driver; keep it out of the client bundle.
   serverExternalPackages: ["pg"],
 

@@ -88,7 +88,7 @@ that would have been expensive to discover later in code.
 
 ## How I verified the final implementation
 
-- `npm test`, 27 tests against real Postgres from a clean `db:reset`, including
+- `npm test`, 29 tests against real Postgres from a clean `db:reset`, including
   the 20-child race under **both** strategies.
 - An invariant sweep over **every** class after **every** test, not just the one
   under test. It caught a real drift during development, when I bumped
@@ -100,6 +100,12 @@ that would have been expensive to discover later in code.
   application code.
 - The testing console at `/testing`, which reports winners, clean refusals and
   raw database errors side by side for safe vs naive.
+- A clean-room run of the published image: containers, volumes **and both
+  images** deleted, then `docker compose up` followed exactly as the README
+  writes it. It pulled from Docker Hub, seeded itself, and reported
+  `16 classes seeded, 0 invariant violations` in 42 seconds. Every scenario was
+  then re-run against that container rather than against my working tree, so
+  the thing I am asking you to run is the thing I actually tested.
 
 Nothing in this repo is claimed as working on the strength of having been
 written. Every claim in the README maps to something I ran.

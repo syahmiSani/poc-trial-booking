@@ -4,7 +4,17 @@ import { fileURLToPath } from "node:url";
 import { pool } from "./pool.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const DB_DIR = path.resolve(here, "../../db");
+
+/**
+ * Where the .sql files live.
+ *
+ * Overridable because the Next standalone build relocates compiled modules, so
+ * a path relative to this file is right in development and wrong in the
+ * container. The Docker image sets DB_SQL_DIR explicitly.
+ */
+export const DB_DIR = process.env.DB_SQL_DIR
+  ? path.resolve(process.env.DB_SQL_DIR)
+  : path.resolve(here, "../../db");
 
 async function runFile(file: string): Promise<void> {
   const sql = await readFile(path.join(DB_DIR, file), "utf8");

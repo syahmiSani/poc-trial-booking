@@ -1,11 +1,10 @@
-# Postgres for the trial-booking POC.
+# Two ways to run this, and both are one command.
 #
-# Port 55432 on purpose: reviewers often already have something on 5432, and a
-# silent connection to the wrong database is a miserable way to start.
+#   docker compose up                  pulls the published image, nothing to build
+#   docker compose up --build          builds from this source tree instead
 #
-# No named volume, also on purpose: the invariants are the point of this repo,
-# and stale data between runs is the fastest way to make a passing test lie.
-# `docker compose down` wipes it; `npm run db:reset` rebuilds it in ~1 second.
+# The app seeds an empty database on startup, so there is no separate migrate
+# step. Port 55432 is exposed for the two-psql-window demo in the README.
 
 services:
   db:
@@ -19,6 +18,8 @@ services:
       TZ: Asia/Singapore
       PGTZ: Asia/Singapore
     ports:
+      # 55432 on purpose: reviewers often already have something on 5432, and a
+      # silent connection to the wrong database is a miserable way to start.
       - "55432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ottodot -d ottodot"]
@@ -26,7 +27,27 @@ services:
       timeout: 3s
       retries: 20
     command:
-      # Small pool is fine, but the 20-way concurrency test needs headroom.
+      # The 20-way concurrency test needs headroom above the default.
       - "postgres"
       - "-c"
       - "max_connections=100"
+    # No named volume, on purpose: stale data between runs is the fastest way to
+    # make a passing test lie. `docker compose down` gives a clean slate.
+
+  app:
+    image: syahmisani/poc-booking:latest
+    build:
+      context: .
+    container_name: ottodot_poc_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://ottodot:ottodot@db:5432/ottodot
+      HOLD_TTL_SECONDS: 600
+      # Test-only knobs. Defaults are the production values; see .env.example.
+      RACE_WINDOW_MS: 0
+      BOOKING_STRATEGY: safe
+      TZ: Asia/Singapore
+    ports:
+      - "3000:3000"
