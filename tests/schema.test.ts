@@ -30,7 +30,7 @@ describe("seed data", () => {
   });
 
   test("sets up the four cases the brief asks to demonstrate", async () => {
-    // Scoped to the four fixture classes on purpose — the seed also carries a
+    // Scoped to the four fixture classes on purpose, the seed also carries a
     // wider timetable of open classes, and this assertion is about the special
     // states, not the schedule size.
     const { rows } = await pool.query<{ id: string; seats_taken: number; capacity: number }>(
@@ -39,7 +39,7 @@ describe("seed data", () => {
     );
     expect(rows).toEqual([
       { id: "TC-101", seats_taken: 1, capacity: 4 }, // seats available
-      { id: "TC-102", seats_taken: 3, capacity: 4 }, // exactly 3 — the race target
+      { id: "TC-102", seats_taken: 3, capacity: 4 }, // exactly 3, the race target
       { id: "TC-103", seats_taken: 4, capacity: 4 }, // full
       { id: "TC-104", seats_taken: 1, capacity: 4 }, // an expired hold
     ]);
@@ -124,7 +124,7 @@ describe("booking row integrity", () => {
 
 describe("the audit view", () => {
   test("detects counter drift, not just overbooking", async () => {
-    // Take a seat without creating a booking — exactly the drift a buggy
+    // Take a seat without creating a booking, exactly the drift a buggy
     // release path would produce.
     await pool.query(
       "UPDATE trial_classes SET seats_taken = seats_taken + 1 WHERE id = 'TC-101'",

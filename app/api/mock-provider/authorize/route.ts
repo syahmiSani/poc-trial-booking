@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json(await mockProvider.authorize(body));
   } catch (err) {
     if (err instanceof ProviderTimeout) {
-      // The authorization DID happen — this response is simply lost. Retrying
+      // The authorization DID happen, this response is simply lost. Retrying
       // with the same idempotency key must return the original, not a new one.
       return NextResponse.json({ error: "PROVIDER_TIMEOUT" }, { status: 504 });
     }

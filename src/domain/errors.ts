@@ -22,7 +22,7 @@ const HTTP_STATUS: Record<BookingErrorCode, number> = {
 };
 
 /**
- * An expected, meaningful refusal — not a crash.
+ * An expected, meaningful refusal, not a crash.
  *
  * The distinction matters: CLASS_FULL is the system working correctly and must
  * never surface as a 500, because "the class filled up" is a thing we tell a

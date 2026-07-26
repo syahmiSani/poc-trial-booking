@@ -23,7 +23,7 @@ export type Booking = {
 /**
  * Reserve a seat and open a checkout window.
  *
- * The seat is taken HERE, at selection — not when payment completes. That is
+ * The seat is taken HERE, at selection, not when payment completes. That is
  * the product decision that stops two parents from ever reaching the payment
  * screen for the same last seat. It costs a little availability (a held seat
  * sits idle for up to HOLD_TTL_SECONDS if the parent walks away) and buys the
@@ -79,7 +79,7 @@ export async function createBooking(
       throw err;
     }
 
-    // Throws CLASS_FULL — which rolls back the insert above.
+    // Throws CLASS_FULL, which rolls back the insert above.
     await takeSeat(db, input.trialClassId, opts);
 
     return booking;
@@ -94,7 +94,7 @@ export async function createBooking(
  *  1. The status change and the seat release happen in the SAME transaction,
  *     so the counter can never disagree with the bookings.
  *  2. The UPDATE is guarded by the current status, so it affects one row or
- *     zero. A double-clicked Remove button releases one seat, not two — which
+ *     zero. A double-clicked Remove button releases one seat, not two, which
  *     would otherwise silently overbook the class later on.
  *
  * Refunds are out of scope. A cancelled booking that was already captured is
@@ -155,7 +155,7 @@ export type RosterEntry = {
 };
 
 /**
- * The teacher's view. Confirmed bookings only — a pending hold is not a child
+ * The teacher's view. Confirmed bookings only, a pending hold is not a child
  * in the room, and a failed payment certainly is not.
  */
 export async function getRoster(trialClassId: string): Promise<{

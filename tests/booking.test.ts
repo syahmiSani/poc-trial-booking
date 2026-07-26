@@ -35,11 +35,11 @@ async function raceFor<T>(
   return { ok, errors, crashes };
 }
 
-describe("createBooking — happy path", () => {
+describe("createBooking, happy path", () => {
   test("reserves a seat and opens a hold", async () => {
     const before = await seatsTaken("TC-101");
     const booking = await createBooking({
-      studentId: "S-10", // Jonas, P5 — wrong level for TC-101 (P4)
+      studentId: "S-10", // Jonas, P5, wrong level for TC-101 (P4)
       trialClassId: "TC-102",
     });
 
@@ -54,7 +54,7 @@ describe("createBooking — happy path", () => {
   });
 });
 
-describe("createBooking — refusals", () => {
+describe("createBooking, refusals", () => {
   test("rejects a duplicate booking for the same child and class", async () => {
     // Aiden is already confirmed on TC-101.
     await expect(
@@ -94,7 +94,7 @@ describe("removing a student from the roster", () => {
     expect(await seatsTaken("TC-102")).toBe(3);
 
     const { refundDue } = await cancelBooking("B-102"); // Chloe, confirmed
-    expect(refundDue).toBe(true); // she had paid — a real build refunds here
+    expect(refundDue).toBe(true); // she had paid, a real build refunds here
 
     expect(await seatsTaken("TC-102")).toBe(2);
     expect(await confirmedRoster("TC-102")).toEqual(["Darren", "Ethan"]);
@@ -117,8 +117,8 @@ describe("removing a student from the roster", () => {
 
 describe("the last-seat race", () => {
   // TC-102 has 3 of 4 seats taken. R-1..R-20 are twenty DISTINCT unbooked P5
-  // children, so every attempt is a genuine contender for the one free seat —
-  // the duplicate index cannot quietly decide this for us.
+  // children, so every attempt is a genuine contender for the one free seat.
+  // The duplicate index cannot quietly decide this for us.
   const racers = Array.from({ length: 20 }, (_, i) => `R-${i + 1}`);
 
   // A forced 200ms window guarantees every transaction reads the seat count
@@ -134,7 +134,7 @@ describe("the last-seat race", () => {
       ),
     );
 
-    // Exactly one seat existed, so exactly one caller may succeed — even with
+    // Exactly one seat existed, so exactly one caller may succeed, even with
     // the race window held deliberately wide open.
     expect(ok).toHaveLength(1);
     expect(await seatsTaken("TC-102")).toBe(4);
@@ -147,11 +147,11 @@ describe("the last-seat race", () => {
 
   test("strategy=naive fails the identical test", async () => {
     // Same race, same window, wrong implementation. The naive path reads the
-    // count, decides, then writes — so all twenty conclude a seat exists.
+    // count, decides, then writes, so all twenty conclude a seat exists.
     //
     // What saves the roster is the CHECK constraint: Postgres rejects the
     // excess writes. So the observable damage is a pile of raw constraint
-    // violations rather than an overbooked class — and that containment IS the
+    // violations rather than an overbooked class, and that containment IS the
     // argument for putting the invariant in the database. Without the CHECK,
     // this test would put a 5th child in a 4-seat classroom.
     const { ok, crashes } = await raceFor(20, (i) =>

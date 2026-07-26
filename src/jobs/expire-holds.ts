@@ -4,7 +4,7 @@ import { withTransaction } from "../db/pool.js";
  * Release seats whose checkout window has closed.
  *
  * This is repair, never the primary guarantee. Nothing in the system depends on
- * it running on time — a late sweep delays availability, it never permits an
+ * it running on time, a late sweep delays availability, it never permits an
  * overbooking. That separation is deliberate: a background job that the
  * invariants depended on would be a background job that could break them.
  *

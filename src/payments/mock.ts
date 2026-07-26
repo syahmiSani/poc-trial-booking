@@ -86,7 +86,7 @@ export class MockPaymentProvider implements PaymentProvider {
       status: "authorized",
       amountCents: input.amountCents,
     });
-    // Recorded BEFORE the timeout below — that is the whole point: the charge
+    // Recorded BEFORE the timeout below, that is the whole point: the charge
     // landed even though the caller never heard back. A retry with the same
     // idempotency key must find this, not create a second authorization.
     this.replies.set(input.idempotencyKey, result);
@@ -143,7 +143,7 @@ export class MockPaymentProvider implements PaymentProvider {
  *
  * Next compiles each route into its own bundle, so a plain module-level
  * `new MockPaymentProvider()` gives /authorize and /capture separate copies of
- * the authorization map — capture then cannot find what authorize just stored.
+ * the authorization map, capture then cannot find what authorize just stored.
  * Pinning to globalThis also survives dev hot-reloads.
  *
  * A real PSP keeps this state on their side; the mock has to keep it on ours.

@@ -3,7 +3,7 @@ import { config } from "../config.js";
 
 /**
  * Single shared pool. The concurrency tests open many clients at once, so the
- * pool is sized above the default 10 — a queued client would serialise the
+ * pool is sized above the default 10, a queued client would serialise the
  * very race the tests are trying to create, and the suite would pass for the
  * wrong reason.
  */

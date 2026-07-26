@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {
   pending_payment: {
-    title: "Seat held — payment needed",
+    title: "Seat held, payment needed",
     body: "We are holding this seat for you. It is released automatically if payment is not completed in time.",
   },
   confirmed: {
@@ -133,8 +133,8 @@ export default async function BookingPage({
               {attempts.map((a, i) => (
                 <tr key={i}>
                   <td style={{ textTransform: "capitalize" }}>{a.status}</td>
-                  <td className="muted small">{a.provider_ref ?? "—"}</td>
-                  <td className="muted">{a.failure_code ?? "—"}</td>
+                  <td className="muted small">{a.provider_ref ?? ", "}</td>
+                  <td className="muted">{a.failure_code ?? ", "}</td>
                   <td>S${(a.amount_cents / 100).toFixed(2)}</td>
                 </tr>
               ))}

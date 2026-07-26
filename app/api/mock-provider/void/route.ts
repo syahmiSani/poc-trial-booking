@@ -3,7 +3,7 @@ import { mockProvider } from "../../../../src/payments/mock.js";
 
 export const dynamic = "force-dynamic";
 
-/** POST /api/mock-provider/void — release a hold without charging anyone. */
+/** POST /api/mock-provider/void, release a hold without charging anyone. */
 export async function POST(req: Request) {
   const { authId } = await req.json();
   try {

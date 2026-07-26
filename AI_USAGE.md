@@ -10,7 +10,7 @@ by reading it and nodding.
 
 - Scaffolding: `package.json`, tsconfig, Vitest config, docker-compose.
 - Writing the SQL schema and seed from a design I had already settled on.
-- The concurrency test harness — barriers, twenty parallel connections,
+- The concurrency test harness, barriers, twenty parallel connections,
   bucketing settled promises. Fiddly, mechanical, and exactly the kind of code
   worth delegating.
 - The seven diagrams in `docs/`, generated from a layout script so the `.drawio`
@@ -36,7 +36,7 @@ Three real ones, all caught by running the code rather than reading it.
 ### 1. A test that passed for the wrong reason
 
 The generated "rejects booking a full class" test booked a child who was
-*already on that class*. It passed — but via `DUPLICATE_BOOKING`, so the
+*already on that class*. It passed, but via `DUPLICATE_BOOKING`, so the
 capacity check never ran at all. I added an unbooked P3 child to the seed
 specifically so that test can only fail for the reason it claims to test.
 
@@ -47,7 +47,7 @@ against the obvious wrong code. It kept passing. The generated version counted
 bookings in `('pending_payment','confirmed')`, so each transaction saw **its
 own** just-inserted row and correctly stopped.
 
-The mistake people actually ship counts **confirmed only** — "how many children
+The mistake people actually ship counts **confirmed only**, "how many children
 are on the roster" is not the same question as "how many seats are gone." Once
 corrected, naive fails exactly as it should: 19 of 20 requests blow up on the
 `CHECK` constraint instead of being refused cleanly.
@@ -75,7 +75,7 @@ now proven against a **deliberately wide** race window rather than a lucky one.
 ## What I would change about my AI workflow
 
 **Write the invariant test before asking for any implementation.** I did this
-for the schema and it worked well — the constraints were verified against real
+for the schema and it worked well, the constraints were verified against real
 Postgres before a line of TypeScript existed. I did *not* do it for the naive
 strategy, and the result was a test that agreed with whatever it was given.
 Judging AI output by a test I wrote first is far more reliable than judging it
@@ -88,7 +88,7 @@ that would have been expensive to discover later in code.
 
 ## How I verified the final implementation
 
-- `npm test` — 27 tests against real Postgres from a clean `db:reset`, including
+- `npm test`, 27 tests against real Postgres from a clean `db:reset`, including
   the 20-child race under **both** strategies.
 - An invariant sweep over **every** class after **every** test, not just the one
   under test. It caught a real drift during development, when I bumped
@@ -96,7 +96,7 @@ that would have been expensive to discover later in code.
 - The full flow driven over REST with curl: book → duplicate refused → declined
   card → seat released → rebook → pay → roster.
 - Two `psql` sessions by hand, confirming the blocked `UPDATE` re-evaluates its
-  `WHERE` and takes no seat — the guarantee, demonstrated without any of my
+  `WHERE` and takes no seat, the guarantee, demonstrated without any of my
   application code.
 - The testing console at `/testing`, which reports winners, clean refusals and
   raw database errors side by side for safe vs naive.

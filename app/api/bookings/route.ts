@@ -5,7 +5,7 @@ import { errorResponse } from "../../../src/http.js";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/bookings — reserve a seat and open a checkout window.
+ * POST /api/bookings, reserve a seat and open a checkout window.
  *
  * `strategy` and `raceWindowMs` are accepted so the in-app testing console can
  * drive the naive implementation and widen the race window on demand. They are

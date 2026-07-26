@@ -39,7 +39,7 @@ export async function POST(
         {
           error: "PROVIDER_TIMEOUT",
           message:
-            "the provider did not answer. Retry with the same idempotency key — it will not double charge.",
+            "the provider did not answer. Retry with the same idempotency key, it will not double charge.",
         },
         { status: 504 },
       );

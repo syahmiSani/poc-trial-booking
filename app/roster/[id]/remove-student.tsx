@@ -31,7 +31,7 @@ export function RemoveStudent({
       return;
     }
     setConfirming(false);
-    // The seat is back in the pool — re-render the roster from the server.
+    // The seat is back in the pool, re-render the roster from the server.
     router.refresh();
   }
 

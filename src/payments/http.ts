@@ -12,7 +12,7 @@ import {
  *
  * This is what the web flow uses. Going over HTTP rather than importing the
  * mock directly buys real fidelity: a genuine network boundary, real JSON
- * serialisation, and a real chance for a response to be lost — which is the
+ * serialisation, and a real chance for a response to be lost, which is the
  * failure mode the idempotency design exists for.
  *
  * The unit tests use the in-process mock instead, because they need to assert

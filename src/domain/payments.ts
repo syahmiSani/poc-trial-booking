@@ -13,8 +13,8 @@ import type { Booking } from "./bookings.js";
  *   authorize  ->  re-verify the seat INSIDE a transaction  ->  capture
  *
  * Money is only ever captured AFTER a booking row has reached 'confirmed' in a
- * committed transaction. If the seat is gone by the time we get here — because
- * the hold expired and someone else took it — the authorization is voided and
+ * committed transaction. If the seat is gone by the time we get here, because
+ * the hold expired and someone else took it, the authorization is voided and
  * the parent is never charged. There is no path in this function that captures
  * first and asks questions later.
  */
@@ -77,7 +77,7 @@ export async function payBooking(
       current.hold_expires_at.getTime() > Date.now();
 
     if (!holdValid) {
-      // The seat is gone. Give it up cleanly and — critically — do NOT capture.
+      // The seat is gone. Give it up cleanly and, critically, do NOT capture.
       if (current.status === "pending_payment") {
         await db.query(
           `UPDATE bookings

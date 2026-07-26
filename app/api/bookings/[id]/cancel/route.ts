@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
  * POST /api/bookings/:id/cancel
  *
  * Removes a child from the class and returns the seat to the pool. Used by the
- * roster view. `refundDue` is reported rather than acted on — refunds are out
+ * roster view. `refundDue` is reported rather than acted on, refunds are out
  * of scope, and quietly swallowing that fact would be worse than saying so.
  */
 export async function POST(

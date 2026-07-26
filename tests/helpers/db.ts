@@ -7,7 +7,7 @@ export { resetDatabase };
 /**
  * The assertion that runs after every single test.
  *
- * It checks the two things that must never be false, for EVERY class — not
+ * It checks the two things that must never be false, for EVERY class, not
  * just the one the test touched:
  *   1. no class is overbooked
  *   2. seats_taken matches the bookings actually holding a seat

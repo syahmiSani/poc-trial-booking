@@ -5,7 +5,7 @@ import { errorResponse } from "../../../../../src/http.js";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/classes/:id/roster — what the teacher reads before class.
+ * GET /api/classes/:id/roster, what the teacher reads before class.
  *
  * Confirmed bookings only. A held seat is not a child in the room, and a failed
  * payment certainly is not.

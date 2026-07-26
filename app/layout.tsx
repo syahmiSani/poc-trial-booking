@@ -2,7 +2,7 @@ import "./globals.css";
 import { NavLink } from "./nav-link";
 
 export const metadata = {
-  title: "Ottodot — trial booking",
+  title: "Ottodot, trial booking",
   description: "Book a trial class",
 };
 

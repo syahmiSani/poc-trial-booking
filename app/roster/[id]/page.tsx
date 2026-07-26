@@ -75,7 +75,7 @@ export default async function RosterPage({
       <p className="small muted" style={{ marginTop: 14 }}>
         Only confirmed bookings appear here. A held seat or a failed payment does
         not put a child in the room. Removing a student returns their seat to
-        the pool immediately — refunds are out of scope in this build.
+        the pool immediately, refunds are out of scope in this build.
       </p>
       <p className="small" style={{ marginTop: 10 }}>
         <Link href="/roster">← All rosters</Link>

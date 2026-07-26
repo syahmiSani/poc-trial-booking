@@ -2,8 +2,8 @@
  * Runtime configuration.
  *
  * The three knobs below the line are TEST-ONLY. They exist so a human can
- * reproduce a millisecond-scale race by hand, and each one is loud about it —
- * a reviewer should never have to guess whether a setting is load-bearing.
+ * reproduce a millisecond-scale race by hand, and each one is loud about it.
+ * A reviewer should never have to guess whether a setting is load-bearing.
  */
 
 function env(key: string, fallback: string): string {

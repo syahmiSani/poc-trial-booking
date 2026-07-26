@@ -33,7 +33,7 @@ export interface PaymentProvider {
   voidAuth(authId: string): Promise<void>;
 }
 
-/** Thrown when the provider's answer never arrived — the charge may exist. */
+/** Thrown when the provider's answer never arrived, the charge may exist. */
 export class ProviderTimeout extends Error {
   constructor(readonly idempotencyKey: string) {
     super("payment provider timed out; outcome unknown");

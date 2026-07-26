@@ -1,5 +1,5 @@
 -- ===========================================================================
--- Trial booking POC — schema
+-- Trial booking POC, schema
 --
 -- Design rule for this file: anything that must remain true even if the
 -- application layer is buggy, replaced, or bypassed entirely is expressed
@@ -17,7 +17,7 @@ CREATE TYPE booking_status AS ENUM (
 
 CREATE TYPE payment_status AS ENUM (
   'authorized',       -- funds held, NOT taken
-  'captured',         -- funds taken — only ever after a booking is confirmed
+  'captured',         -- funds taken, only ever after a booking is confirmed
   'voided',           -- authorization released without charging
   'failed',           -- provider declined
   'unknown'           -- timeout: the charge may or may not exist. Reconciled.
@@ -93,7 +93,7 @@ CREATE TABLE bookings (
 );
 
 -- INVARIANT 2: one child cannot hold two live bookings for the same class.
--- Partial on purpose — failed/expired/cancelled rows are kept for audit and
+-- Partial on purpose, failed/expired/cancelled rows are kept for audit and
 -- must NOT block a legitimate retry by the same parent.
 CREATE UNIQUE INDEX bookings_one_active_per_student_class
   ON bookings (student_id, trial_class_id)

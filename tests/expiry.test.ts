@@ -44,7 +44,7 @@ describe("the hold sweeper", () => {
     expect(await seatsTaken("TC-102")).toBe(4);
   });
 
-  test("is idempotent — running it twice releases nothing extra", async () => {
+  test("is idempotent, running it twice releases nothing extra", async () => {
     await expireHolds();
     const seatsAfterFirst = await seatsTaken("TC-104");
 
@@ -60,7 +60,7 @@ describe("end-to-end: the scenario in the brief", () => {
     const a = await createBooking({ studentId: "S-10", trialClassId: "TC-102" });
     expect(await seatsTaken("TC-102")).toBe(4);
 
-    // Parent B (Kaya) is refused at SELECTION — she never reaches payment.
+    // Parent B (Kaya) is refused at SELECTION, she never reaches payment.
     await expect(
       createBooking({ studentId: "S-11", trialClassId: "TC-102" }),
     ).rejects.toMatchObject({ code: "CLASS_FULL" });

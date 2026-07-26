@@ -38,7 +38,7 @@ export function BookingPicker({
   const child = students.find((s) => s.id === studentId);
 
   // A child can only sit a class at their own level, so classes for other
-  // levels are not "disabled options" — they are not options at all. Showing
+  // levels are not "disabled options", they are not options at all. Showing
   // them greyed out just makes the parent scan past rows they can never pick.
   const eligible = classes.filter((c) => !child || c.level === child.level);
   const visible = eligible.filter((c) => subject === "all" || c.subject === subject);
@@ -59,7 +59,7 @@ export function BookingPicker({
     const json = await res.json();
 
     if (!res.ok) {
-      // A full class is a normal answer, not a crash — say so in plain words.
+      // A full class is a normal answer, not a crash, say so in plain words.
       setBusy("");
       setError({ code: json.error, message: json.message });
       router.refresh(); // pull fresh seat counts from the server
