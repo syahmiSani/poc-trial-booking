@@ -1,34 +1,46 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { listAvailableClasses } from "../../src/domain/bookings.js";
 
-export default function RosterIndex() {
-  const [classes, setClasses] = useState<any[]>([]);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    void fetch("/api/trial-classes")
-      .then((r) => r.json())
-      .then((j) => setClasses(j.classes));
-  }, []);
+export default async function RosterIndex() {
+  const classes = await listAvailableClasses();
 
   return (
     <>
-      <h1>Rosters</h1>
-      <p className="hint">What the teacher reads before class starts.</p>
+      <div className="page-head">
+        <h1>Class rosters</h1>
+        <p className="sub">What the teacher sees before class starts.</p>
+      </div>
+
       <div className="card">
         <table>
           <thead>
-            <tr><th>Class</th><th>Subject</th><th>Level</th><th>Seats left</th><th /></tr>
+            <tr>
+              <th>Class</th>
+              <th>Subject</th>
+              <th>When</th>
+              <th>Teacher</th>
+              <th>Seats left</th>
+              <th />
+            </tr>
           </thead>
           <tbody>
             {classes.map((c) => (
               <tr key={c.id}>
                 <td>{c.id}</td>
-                <td>{c.subject}</td>
-                <td>{c.level}</td>
-                <td>{c.seats_available}</td>
-                <td><Link href={`/roster/${c.id}`}>Open</Link></td>
+                <td>
+                  <span className={`subject-chip ${c.subject}`}>{c.subject}</span>{" "}
+                  <span className="muted small">{c.level}</span>
+                </td>
+                <td>{new Date(c.starts_at).toLocaleString("en-SG")}</td>
+                <td>{c.teacher_name}</td>
+                <td className={c.seats_available === 0 ? "bad-text" : undefined}>
+                  {c.seats_available} of 4
+                </td>
+                <td>
+                  <Link href={`/roster/${c.id}`}>Open roster</Link>
+                </td>
               </tr>
             ))}
           </tbody>

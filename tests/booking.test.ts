@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, test } from "vitest";
-import { createBooking } from "../src/domain/bookings.js";
+import { cancelBooking, createBooking } from "../src/domain/bookings.js";
 import { BookingError, isBookingError } from "../src/domain/errors.js";
 import { resetDatabase } from "../src/db/sql.js";
 import {
@@ -86,6 +86,32 @@ describe("createBooking — refusals", () => {
       createBooking({ studentId: "S-13", trialClassId: "TC-103" }),
     ).rejects.toThrow();
     expect(await seatsTaken("TC-103")).toBe(before);
+  });
+});
+
+describe("removing a student from the roster", () => {
+  test("returns the seat to the pool and frees it for someone else", async () => {
+    expect(await seatsTaken("TC-102")).toBe(3);
+
+    const { refundDue } = await cancelBooking("B-102"); // Chloe, confirmed
+    expect(refundDue).toBe(true); // she had paid — a real build refunds here
+
+    expect(await seatsTaken("TC-102")).toBe(2);
+    expect(await confirmedRoster("TC-102")).toEqual(["Darren", "Ethan"]);
+
+    // The freed seat is genuinely bookable, not just missing from the roster.
+    await createBooking({ studentId: "R-1", trialClassId: "TC-102" });
+    expect(await seatsTaken("TC-102")).toBe(3);
+  });
+
+  test("a double-clicked Remove releases one seat, not two", async () => {
+    await cancelBooking("B-102");
+    await expect(cancelBooking("B-102")).rejects.toMatchObject({
+      code: "NOT_PENDING",
+    });
+    // If the guard were missing, seats_taken would drift down to 1 here and
+    // the class would silently accept a 5th child later.
+    expect(await seatsTaken("TC-102")).toBe(2);
   });
 });
 

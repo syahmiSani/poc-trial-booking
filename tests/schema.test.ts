@@ -30,8 +30,12 @@ describe("seed data", () => {
   });
 
   test("sets up the four cases the brief asks to demonstrate", async () => {
+    // Scoped to the four fixture classes on purpose — the seed also carries a
+    // wider timetable of open classes, and this assertion is about the special
+    // states, not the schedule size.
     const { rows } = await pool.query<{ id: string; seats_taken: number; capacity: number }>(
-      "SELECT id, seats_taken, capacity FROM trial_classes ORDER BY id",
+      `SELECT id, seats_taken, capacity FROM trial_classes
+        WHERE id IN ('TC-101','TC-102','TC-103','TC-104') ORDER BY id`,
     );
     expect(rows).toEqual([
       { id: "TC-101", seats_taken: 1, capacity: 4 }, // seats available

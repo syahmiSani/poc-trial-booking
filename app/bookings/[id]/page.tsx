@@ -1,144 +1,154 @@
-"use client";
-
-import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { pool } from "../../../src/db/pool.js";
+import { getBooking } from "../../../src/domain/bookings.js";
+import { PayPanel } from "./pay-panel";
 
-const CARDS = [
-  { token: "tok_ok", label: "Working card" },
-  { token: "tok_fail_declined", label: "Declined card" },
-  { token: "tok_fail_funds", label: "Insufficient funds" },
-  { token: "tok_timeout", label: "Provider timeout (charge lands, reply lost)" },
-];
+export const dynamic = "force-dynamic";
 
-export default function BookingPage({
+const STATUS_COPY: Record<string, { title: string; body: string }> = {
+  pending_payment: {
+    title: "Seat held — payment needed",
+    body: "We are holding this seat for you. It is released automatically if payment is not completed in time.",
+  },
+  confirmed: {
+    title: "Booking confirmed",
+    body: "Your child is on the class roster. See you in class.",
+  },
+  payment_failed: {
+    title: "Payment did not go through",
+    body: "The seat has been released and you have not been charged. You are welcome to try again.",
+  },
+  cancelled: {
+    title: "Seat no longer available",
+    body: "This seat was taken before your payment completed, so the payment was cancelled. You have not been charged.",
+  },
+  expired: {
+    title: "Hold expired",
+    body: "The seat was released because payment was not completed in time. You have not been charged.",
+  },
+};
+
+export default async function BookingPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
-  const [data, setData] = useState<any>(null);
-  const [card, setCard] = useState(CARDS[0]!.token);
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const { id } = await params;
+  const booking = await getBooking(id);
+  if (!booking) notFound();
 
-  const load = useCallback(async () => {
-    setData(await fetch(`/api/bookings/${id}`).then((r) => r.json()));
-  }, [id]);
+  const [{ rows: ctx }, { rows: attempts }] = await Promise.all([
+    pool.query(
+      `SELECT s.name AS student_name, tc.subject, tc.level, tc.starts_at,
+              tc.teacher_name, tc.price_cents
+         FROM bookings b
+         JOIN students s ON s.id = b.student_id
+         JOIN trial_classes tc ON tc.id = b.trial_class_id
+        WHERE b.id = $1`,
+      [id],
+    ),
+    pool.query(
+      `SELECT status, failure_code, provider_ref, amount_cents
+         FROM payment_attempts WHERE booking_id = $1 ORDER BY created_at`,
+      [id],
+    ),
+  ]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function pay() {
-    setBusy(true);
-    setResult(null);
-    const res = await fetch(`/api/bookings/${id}/pay`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ cardToken: card }),
-    });
-    const json = await res.json();
-    setBusy(false);
-    setResult(
-      res.ok
-        ? { ok: true, text: "Payment captured. The seat is confirmed." }
-        : { ok: false, text: `${json.error} — ${json.message ?? ""}` },
-    );
-    await load();
-  }
-
-  if (!data?.booking) return <p>Loading…</p>;
-  const b = data.booking;
-  const ctx = data.context;
-  const pending = b.status === "pending_payment";
+  const c = ctx[0];
+  const copy = STATUS_COPY[booking.status];
+  const tone =
+    booking.status === "confirmed"
+      ? "info"
+      : booking.status === "pending_payment"
+        ? "warn"
+        : "danger";
 
   return (
     <>
-      <h1>Booking {b.id.slice(0, 8)}</h1>
-      <p className="hint">
-        <span className={`pill ${b.status}`}>{b.status}</span>
-      </p>
-
-      <div className="card">
-        <table>
-          <tbody>
-            <tr><th>Child</th><td>{ctx?.student_name}</td></tr>
-            <tr><th>Class</th><td>{b.trial_class_id} — {ctx?.subject} {ctx?.level}</td></tr>
-            <tr><th>Starts</th><td>{ctx && new Date(ctx.starts_at).toLocaleString()}</td></tr>
-            <tr><th>Teacher</th><td>{ctx?.teacher_name}</td></tr>
-            <tr><th>Price</th><td>S${((ctx?.price_cents ?? 0) / 100).toFixed(2)}</td></tr>
-            <tr>
-              <th>Seat held until</th>
-              <td>
-                {b.hold_expires_at
-                  ? new Date(b.hold_expires_at).toLocaleTimeString()
-                  : "—"}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="page-head">
+        <h1>Your trial booking</h1>
+        <p className="sub">
+          Reference {id.slice(0, 8)} ·{" "}
+          <span className={`badge ${booking.status}`}>
+            {booking.status.replace("_", " ")}
+          </span>
+        </p>
       </div>
 
-      {pending && (
-        <>
-          <h2>Payment</h2>
-          <div className="card">
-            <p className="hint">
-              The seat is already held for you. Money is only captured after the
-              booking is confirmed — if the seat is gone by then, the
-              authorization is voided and you are not charged.
-            </p>
-            <div className="row">
-              <select value={card} onChange={(e) => setCard(e.target.value)}>
-                {CARDS.map((c) => (
-                  <option key={c.token} value={c.token}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <button onClick={pay} disabled={busy}>
-                {busy ? "Processing…" : "Pay S$50.00"}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {result && (
-        <div className="card" style={{ borderColor: result.ok ? "#9ccdae" : "#e5a9a3" }}>
-          <strong className={result.ok ? "ok" : "bad"}>{result.text}</strong>
+      {copy && (
+        <div className={`note ${tone}`} style={{ marginBottom: 16 }}>
+          <strong>{copy.title}</strong>
+          <div style={{ marginTop: 2 }}>{copy.body}</div>
         </div>
       )}
 
-      <h2>Payment attempts</h2>
       <div className="card">
-        {data.attempts.length === 0 ? (
-          <p className="hint">None yet.</p>
-        ) : (
+        <div className="card-head">Class details</div>
+        <div className="card-pad">
+          <dl className="kv">
+            <dt>Child</dt>
+            <dd>{c?.student_name}</dd>
+            <dt>Subject</dt>
+            <dd style={{ textTransform: "capitalize" }}>
+              {c?.subject} · {c?.level}
+            </dd>
+            <dt>When</dt>
+            <dd>{c && new Date(c.starts_at).toLocaleString("en-SG")}</dd>
+            <dt>Teacher</dt>
+            <dd>{c?.teacher_name}</dd>
+            <dt>Class</dt>
+            <dd>{booking.trial_class_id}</dd>
+            <dt>Price</dt>
+            <dd>S${((c?.price_cents ?? 0) / 100).toFixed(2)}</dd>
+            {booking.hold_expires_at && (
+              <>
+                <dt>Seat held until</dt>
+                <dd>
+                  {new Date(booking.hold_expires_at).toLocaleTimeString("en-SG")}
+                </dd>
+              </>
+            )}
+          </dl>
+        </div>
+      </div>
+
+      {booking.status === "pending_payment" && (
+        <PayPanel bookingId={id} amountCents={c?.price_cents ?? 0} />
+      )}
+
+      {attempts.length > 0 && (
+        <div className="card">
+          <div className="card-head">Payment history</div>
           <table>
             <thead>
-              <tr><th>Status</th><th>Provider ref</th><th>Failure</th><th>Amount</th></tr>
+              <tr>
+                <th>Result</th>
+                <th>Reference</th>
+                <th>Reason</th>
+                <th>Amount</th>
+              </tr>
             </thead>
             <tbody>
-              {data.attempts.map((a: any, i: number) => (
+              {attempts.map((a, i) => (
                 <tr key={i}>
-                  <td>{a.status}</td>
-                  <td>{a.provider_ref ?? "—"}</td>
-                  <td>{a.failure_code ?? "—"}</td>
+                  <td style={{ textTransform: "capitalize" }}>{a.status}</td>
+                  <td className="muted small">{a.provider_ref ?? "—"}</td>
+                  <td className="muted">{a.failure_code ?? "—"}</td>
                   <td>S${(a.amount_cents / 100).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
 
-      <p>
-        <Link href={`/roster/${b.trial_class_id}`}>
-          View the roster for {b.trial_class_id}
+      <p style={{ marginTop: 18 }} className="small">
+        <Link href={`/roster/${booking.trial_class_id}`}>
+          View class roster
         </Link>
-        {"  ·  "}
-        <Link href="/">Book another</Link>
+        {"   ·   "}
+        <Link href="/">Book another trial</Link>
       </p>
     </>
   );

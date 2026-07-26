@@ -74,6 +74,27 @@ INSERT INTO trial_classes
   ('TC-104', 'science', 'P6',
    '2026-08-01 14:00+08', '2026-08-01 15:15+08', 'Mr Chua',  4, 1);
 
+-- A fuller weekly schedule so the booking page looks like a real timetable
+-- rather than a fixture. These carry no special state — every one of them is
+-- simply open. The four above remain the ones the tests and demos rely on.
+INSERT INTO trial_classes
+  (id, subject, level, starts_at, ends_at, teacher_name, capacity, seats_taken)
+VALUES
+  -- Weekday evenings (Ottodot runs 15:00–20:30 on weekdays)
+  ('TC-105', 'math',    'P1', '2026-07-27 16:00+08', '2026-07-27 17:15+08', 'Ms Lim',   4, 0),
+  ('TC-106', 'science', 'P2', '2026-07-27 17:30+08', '2026-07-27 18:45+08', 'Mr Chua',  4, 0),
+  ('TC-107', 'math',    'P4', '2026-07-28 17:30+08', '2026-07-28 18:45+08', 'Mr Tan',   4, 0),
+  ('TC-108', 'science', 'P5', '2026-07-28 19:00+08', '2026-07-28 20:15+08', 'Ms Devi',  4, 0),
+  ('TC-109', 'math',    'P3', '2026-07-29 16:00+08', '2026-07-29 17:15+08', 'Ms Devi',  4, 0),
+  ('TC-110', 'science', 'P4', '2026-07-29 17:30+08', '2026-07-29 18:45+08', 'Ms Lim',   4, 0),
+  ('TC-111', 'math',    'P6', '2026-07-30 19:00+08', '2026-07-30 20:15+08', 'Mr Tan',   4, 0),
+  ('TC-112', 'science', 'P3', '2026-07-31 16:00+08', '2026-07-31 17:15+08', 'Mr Chua',  4, 0),
+  -- Weekends (09:30–18:00)
+  ('TC-113', 'math',    'P2', '2026-08-01 09:30+08', '2026-08-01 10:45+08', 'Ms Lim',   4, 0),
+  ('TC-114', 'science', 'P1', '2026-08-01 16:00+08', '2026-08-01 17:15+08', 'Ms Devi',  4, 0),
+  ('TC-115', 'math',    'P5', '2026-08-02 11:00+08', '2026-08-02 12:15+08', 'Mr Tan',   4, 0),
+  ('TC-116', 'science', 'P6', '2026-08-02 14:00+08', '2026-08-02 15:15+08', 'Mr Chua',  4, 0);
+
 -- ---------------------------------------------------------------------------
 -- Bookings
 -- ---------------------------------------------------------------------------

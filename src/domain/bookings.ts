@@ -1,7 +1,7 @@
 import { config, type BookingStrategy } from "../config.js";
 import { isPgError, PG, withTransaction, pool } from "../db/pool.js";
 import { BookingError } from "./errors.js";
-import { takeSeat } from "./seats.js";
+import { releaseSeat, takeSeat } from "./seats.js";
 
 export type BookingStatus =
   | "pending_payment"
@@ -83,6 +83,59 @@ export async function createBooking(
     await takeSeat(db, input.trialClassId, opts);
 
     return booking;
+  });
+}
+
+/**
+ * Remove a child from a class and return their seat to the pool.
+ *
+ * Used by the admin/teacher roster view. Two details make this safe:
+ *
+ *  1. The status change and the seat release happen in the SAME transaction,
+ *     so the counter can never disagree with the bookings.
+ *  2. The UPDATE is guarded by the current status, so it affects one row or
+ *     zero. A double-clicked Remove button releases one seat, not two — which
+ *     would otherwise silently overbook the class later on.
+ *
+ * Refunds are out of scope. A cancelled booking that was already captured is
+ * flagged here and would be handed to a refund flow in a real build.
+ */
+export async function cancelBooking(
+  bookingId: string,
+  reason = "removed_by_admin",
+): Promise<{ booking: Booking; refundDue: boolean }> {
+  return withTransaction(async (db) => {
+    const { rows } = await db.query<Booking>(
+      "SELECT * FROM bookings WHERE id = $1 FOR UPDATE",
+      [bookingId],
+    );
+    const current = rows[0];
+    if (!current) throw new BookingError("BOOKING_NOT_FOUND");
+
+    const heldSeat =
+      current.status === "confirmed" || current.status === "pending_payment";
+    if (!heldSeat) {
+      throw new BookingError(
+        "NOT_PENDING",
+        `booking is already ${current.status}`,
+      );
+    }
+
+    const { rows: updated, rowCount } = await db.query<Booking>(
+      `UPDATE bookings
+          SET status = 'cancelled', cancelled_reason = $2, hold_expires_at = NULL
+        WHERE id = $1 AND status IN ('pending_payment', 'confirmed')
+        RETURNING *`,
+      [bookingId, reason],
+    );
+
+    // Release only if THIS call is the one that changed the status.
+    if (rowCount === 1) await releaseSeat(db, current.trial_class_id);
+
+    return {
+      booking: updated[0]!,
+      refundDue: current.status === "confirmed",
+    };
   });
 }
 
