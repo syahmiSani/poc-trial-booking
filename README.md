@@ -1,9 +1,9 @@
-# Ottodot — trial booking POC
+# Ottodot, trial booking POC
 
 A trial booking slice where the 4-seat limit and the no-duplicate rule are
 enforced by **the database itself**, seats are reserved at checkout with an
 expiring hold, money is never captured until a seat is confirmed in a committed
-transaction — and every one of those claims is backed by a test you can run in
+transaction, and every one of those claims is backed by a test you can run in
 under a minute.
 
 **Time spent: ~1h 50m.** See [what I cut](#what-i-deliberately-cut).
@@ -12,7 +12,7 @@ under a minute.
 
 ## Why the invariant matters here
 
-Ottodot runs live, teacher-led Math and Science classes for P1–P6, delivered
+Ottodot runs live, teacher-led Math and Science classes for P1 to P6, delivered
 over Google Meet and blended with custom Roblox games. Trial classes cap at
 **4 students** and convert into a monthly subscription. Two consequences shape
 every decision in this repo:
@@ -31,14 +31,14 @@ booking for the last seat, and nobody is charged for a seat they did not get.*
 ## Run it
 
 ```bash
-docker compose up -d db     # Postgres on :55432 (not 5432 — avoids collisions)
+docker compose up -d db     # Postgres on :55432 (not 5432, avoids collisions)
 npm install
 npm run db:reset            # migrate + seed, prints the seat audit
 npm test                    # 27 tests, including the concurrency suite
 npm run dev                 # http://localhost:3000
 ```
 
-No `.env` needed — the defaults in `src/config.ts` match docker-compose. Copy
+No `.env` needed, the defaults in `src/config.ts` match docker-compose. Copy
 `.env.example` if you want to change anything.
 
 | Page | What it is |
@@ -46,7 +46,7 @@ No `.env` needed — the defaults in `src/config.ts` match docker-compose. Copy
 | `/` | Pick a child, pick a class, book |
 | `/bookings/:id` | Booking status + payment (choose a card outcome) |
 | `/roster/:id` | What the teacher sees before class |
-| **`/testing`** | **Testing console — drive every scenario solo** |
+| **`/testing`** | **Testing console, drive every scenario solo** |
 
 ---
 
@@ -55,13 +55,13 @@ No `.env` needed — the defaults in `src/config.ts` match docker-compose. Copy
 A race is not a contest of speed. It is an **overlap** between the moment a
 request reads the seat count and the moment it writes. If both read "3 of 4"
 before either writes, both correctly conclude a seat exists and both write.
-Nobody loses — they both win, and the class has 5 children in it.
+Nobody loses, they both win, and the class has 5 children in it.
 
 That means you do not need two people or two networks. You need two requests
 in flight at once, and that is manufacturable on one laptop. Four ways, in
 increasing order of how much you have to trust me:
 
-### Level 0 — two `psql` windows, no application code at all
+### Level 0, two `psql` windows, no application code at all
 
 ```sql
 -- SESSION 1                              -- SESSION 2
@@ -94,7 +94,7 @@ count-then-write loses and this does not.
 
 ![two psql sessions](docs/diagrams/fig4d_psql.png)
 
-### Level 1 — the testing console
+### Level 1, the testing console
 
 Open `/testing` and press **20 parents · safe**, then **20 parents · naive**.
 
@@ -103,20 +103,20 @@ Open `/testing` and press **20 parents · safe**, then **20 parents · naive**.
 | `safe` | 1 | 19 | 0 |
 | `naive` | 1 | 0 | **19** |
 
-Both keep the roster at 4 — because the `CHECK` constraint catches what the
+Both keep the roster at 4, because the `CHECK` constraint catches what the
 naive code lets through. That containment *is* the argument for putting the
 invariant in the database. Without the `CHECK`, naive puts a 5th child in the
 room.
 
-### Level 2 — the test suite
+### Level 2, the test suite
 
 ```bash
 npm test
 ```
 
-### Level 3 — two browser tabs
+### Level 3, two browser tabs
 
-1. `npm run db:reset` — TC-102 now has 1 seat left
+1. `npm run db:reset`, TC-102 now has 1 seat left
 2. Tab 1: book **Racer 1** onto TC-102 → held, seats 4/4
 3. Tab 2 (incognito): book **Racer 2** onto TC-102 → **CLASS_FULL**, and they
    never reach the payment screen
@@ -128,8 +128,8 @@ npm test
 
 A test suite nobody can break is a test suite nobody should believe.
 
-- Run any race with `strategy: "naive"` — the clean-refusal count must drop to 0.
-- Change `capacity` to 1 in the seed and re-run — every invariant must still hold.
+- Run any race with `strategy: "naive"`, the clean-refusal count must drop to 0.
+- Change `capacity` to 1 in the seed and re-run, every invariant must still hold.
 
 ---
 
@@ -147,7 +147,7 @@ A test suite nobody can break is a test suite nobody should believe.
 | `bookings` | id, student_id, trial_class_id, **status**, **hold_expires_at**, confirmed_at, cancelled_reason |
 | `payment_attempts` | id, booking_id, **idempotency_key**, amount_cents, status, provider_ref, failure_code |
 
-Three constraints do the real work — all in
+Three constraints do the real work, all in
 [`db/migrations/001_schema.sql`](db/migrations/001_schema.sql):
 
 ```sql
@@ -218,7 +218,7 @@ seat, `payBooking` re-checks inside a transaction *after* authorizing and
 *before* capturing. If the seat is gone: void the authorization, mark the
 booking `cancelled (seat_lost)`, charge nothing.
 
-The brief's phrasing — "B completes payment first" — describes a system that
+The brief's phrasing, "B completes payment first", describes a system that
 reserves at payment time. I deliberately changed that: reserving at selection is
 what stops two parents from ever *reaching* the payment screen for the same
 seat. If that product call is wrong, mechanism 2 still holds the invariant.
@@ -245,7 +245,7 @@ committed transaction.** Everything else is authorize-and-void.
 | Double submit / replay | already-confirmed returns success | one charge, one seat |
 
 The strongest assertion in the suite is a negative one: on the seat-lost path,
-`capture` is **never called** — asserted as exactly `["authorize", "void"]`.
+`capture` is **never called**, asserted as exactly `["authorize", "void"]`.
 
 ### Which check belongs where
 
@@ -266,7 +266,7 @@ never permits an overbooking.
 | Fixture | Demonstrates |
 |---|---|
 | TC-101 Science P4, 1/4 | a class with seats; Aiden already on it → duplicate case |
-| **TC-102 Math P5, 3/4** | **exactly 3 confirmed — the last-seat race target** |
+| **TC-102 Math P5, 3/4** | **exactly 3 confirmed, the last-seat race target** |
 | TC-103 Math P3, 4/4 | a full class |
 | TC-104 Science P6 | an **expired hold** + a `payment_failed` booking holding no seat |
 | R-1 … R-20 | twenty unbooked P5 children, so the race is decided by seat scarcity |
@@ -278,7 +278,7 @@ Card tokens mirror Stripe's test-card convention: `tok_ok`,
 
 ## Tests
 
-27 tests against **real Postgres** — concurrency proven against an in-memory
+27 tests against **real Postgres**, concurrency proven against an in-memory
 fake proves nothing.
 
 | File | Covers |
@@ -314,7 +314,7 @@ Each of these was a decision, not an oversight:
 - **Async webhook delivery.** The provider is a real HTTP service with real
   idempotency, but `pay` calls it synchronously. The webhook shape is designed
   (signature verification, replay window) and not built.
-- **Payment reconciliation job** for `unknown` attempts — the timeout path is
+- **Payment reconciliation job** for `unknown` attempts, the timeout path is
   handled by idempotent retry instead.
 - **3DS / `requires_action`**, settlement, refunds, disputes, partial captures.
 - **Waitlists, rescheduling, cancellation, emails, calendar invites.**
@@ -331,32 +331,42 @@ decline codes, and the timeout-where-the-charge-landed case. Not modelled: 3DS,
 settlement, FX, chargebacks, fraud checks.
 
 The interface mirrors Stripe PaymentIntents 1:1, so swapping it is one adapter
-file — and the tests are written against the *interface*, not the mock.
+file, and the tests are written against the *interface*, not the mock.
 
 ---
 
 ## What I would monitor after release
 
-- **`SELECT count(*) FROM class_seat_audit WHERE NOT ok` — must be 0. Page
+- **`SELECT count(*) FROM class_seat_audit WHERE NOT ok`, must be 0. Page
   immediately if it is ever not.** This should be impossible; if it fires, an
   invariant has been bypassed.
 - Authorizations without a matching capture or void (money held, nothing sold).
-- Hold expiry rate — a spike means checkout is broken, not that parents changed
+- Hold expiry rate, a spike means checkout is broken, not that parents changed
   their minds.
 - `payment_attempts` stuck in `unknown`, and their age.
 - Funnel drop-off between `pending_payment` and `confirmed`.
-- `CLASS_FULL` rate — high numbers mean it is time to open more trial slots,
+- `CLASS_FULL` rate, high numbers mean it is time to open more trial slots,
   which is a revenue signal rather than an error.
 
 ## What I would do next
 
-1. **Waitlist** for full classes — right now demand at a full class is thrown away.
+0. **Be kinder to the slow payer.** The hold expiry is correct but the
+   experience around it is not. A parent unfamiliar with online checkout is
+   exactly the one who runs out of time, and today they get no countdown, no
+   warning, and only find out the seat is gone after entering their card. Three
+   fixes, in order of value: a visible countdown with a warning before expiry;
+   a hold longer than 10 minutes, since with 4 seats contention is rare and the
+   cost of holding is low; and letting an expired hold be **reclaimed when the
+   seat is still free**, because refusing someone a seat nobody else wanted
+   helps no one. The last one is safe precisely because the reclaim would go
+   through the same atomic conditional UPDATE as any other booking.
+1. **Waitlist** for full classes, right now demand at a full class is thrown away.
 2. **Seat rows** instead of a counter (4 rows per class, claim one) for per-seat
    audit history. Equally correct, more expensive; worth it once seats gain
    attributes.
 3. Real provider webhooks with signature verification and an outbox table.
 4. Auth, and scoping every query by the session's parent.
-5. Contract-test the payment suite against Stripe test mode — the interface
+5. Contract-test the payment suite against Stripe test mode, the interface
    already allows it.
 6. Admin cancellation with refunds, then reconciliation.
 

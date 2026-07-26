@@ -4,15 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * Card options are visible because this is a test build — a reviewer needs to
+ * Card options are visible because this is a test build, a reviewer needs to
  * reach the decline and timeout paths without a real gateway. In production
  * this panel would be the provider's hosted card field.
  */
 const CARDS = [
-  { token: "tok_ok", label: "Visa •••• 4242 — succeeds" },
-  { token: "tok_fail_declined", label: "Visa •••• 0002 — declined" },
-  { token: "tok_fail_funds", label: "Visa •••• 9995 — insufficient funds" },
-  { token: "tok_timeout", label: "Visa •••• 0000 — provider timeout" },
+  { token: "tok_ok", label: "Visa •••• 4242, succeeds" },
+  { token: "tok_fail_declined", label: "Visa •••• 0002, declined" },
+  { token: "tok_fail_funds", label: "Visa •••• 9995, insufficient funds" },
+  { token: "tok_timeout", label: "Visa •••• 0000, provider timeout" },
 ];
 
 export function PayPanel({
@@ -40,14 +40,17 @@ export function PayPanel({
 
     setMsg(
       res.ok
-        ? { ok: true, text: "Payment successful — your seat is confirmed." }
+        ? { ok: true, text: "Payment successful, your seat is confirmed." }
         : {
             ok: false,
             text:
-              json.error === "SEAT_LOST"
-                ? "This seat was taken while you were paying. You have not been charged."
+              // Two different codes mean the same thing to a parent: the seat
+              // is gone and no money moved. Only the internals differ, so only
+              // the internals should care about the distinction.
+              json.error === "SEAT_LOST" || json.error === "NOT_PENDING"
+                ? "Sorry, this seat is no longer held for you, so the payment was cancelled. You have not been charged. Please pick another time."
                 : json.error === "PROVIDER_TIMEOUT"
-                  ? "The payment provider did not respond. Press Pay again — it will not charge you twice."
+                  ? "The payment provider did not respond. Press Pay again, it will not charge you twice."
                   : (json.message ?? json.error),
           },
     );
