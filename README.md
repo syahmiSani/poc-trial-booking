@@ -281,9 +281,31 @@ seat. If that product call is wrong, mechanism 2 still holds the invariant.
 
 ### How duplicates are prevented
 
-Partial unique index, not application logic. The subtlety is the `WHERE` clause:
-a plain unique index would also block duplicates *and* permanently lock a parent
-out after one declined card. There is a test for exactly that.
+Follow one double-booking attempt all the way down:
+
+| Layer | What happens | Is this what stops it? |
+|---|---|---|
+| UI | The parent clicks Book, gets "Already booked" | No. It only reports the refusal |
+| API | `POST /api/bookings` returns 409 `DUPLICATE_BOOKING` | No. It only translates the refusal |
+| Domain | `createBooking` inserts the booking row first, then catches `23505` | No. It only names the refusal |
+| **Database** | **Partial unique index rejects the INSERT** | **Yes** |
+
+The insert is deliberately attempted *before* the seat counter is touched, so
+the database gets to decide before anything else changes. Nothing above the
+database ever asks "does this child already have a booking?", so there is no
+read-then-write gap to lose a race in, and a direct `psql` INSERT is refused
+exactly the same way.
+
+```sql
+CREATE UNIQUE INDEX bookings_one_active_per_student_class
+  ON bookings (student_id, trial_class_id)
+  WHERE status IN ('pending_payment', 'confirmed');
+```
+
+The subtlety is the `WHERE` clause. A plain unique index would block duplicates
+*and* permanently lock a parent out after one declined card, because the failed
+row would sit there forever blocking a retry. Partial means only live bookings
+occupy the slot. There is a test for exactly that.
 
 ### How payment failure is handled
 
@@ -302,12 +324,23 @@ The strongest assertion in the suite is a negative one: on the seat-lost path,
 
 ### Which check belongs where
 
-| Layer | Role | Examples |
-|---|---|---|
-| UI | Fast feedback. Never trusted. | Grey out full classes, disable double-submit |
-| API / domain | Authoritative rules, orchestration, idempotency | State machine, hold TTL, authorize→capture ordering |
-| **Database** | **Invariants that survive a buggy app** | `CHECK`, partial unique index, atomic conditional UPDATE |
-| Background job | Time-based repair, never the guarantee | Hold sweeper |
+Every rule, and which layer actually enforces it. **Bold is the enforcement
+point**; everything else is speed, courtesy or repair.
+
+| Check | UI | Backend | Database | Background job |
+|---|---|---|---|---|
+| Duplicate booking | reports the refusal | maps `23505` to 409 | **partial unique index** | |
+| Capacity of four | greys out full classes | reads 0 rows, returns `CLASS_FULL` | **conditional UPDATE + `CHECK`** | |
+| Last seat race | nothing | voids the authorization on loss | **conditional UPDATE arbitrates** | |
+| Level match | shows only the child's level | **rejects `LEVEL_MISMATCH`** | | |
+| Payment outcome | shows status and attempt history | **orders authorize → confirm → capture** | unique idempotency key | |
+| Stale holds | shows the hold expiry | re-checks the hold before capture | `hold_expires_at`, `CHECK` requires it | **sweeper releases the seat** |
+| Counter drift | | | `class_seat_audit` view | **asserted after every test** |
+
+Two things that table is saying. The UI never enforces anything, it only saves a
+round trip. And the only row where the backend is the last line of defence is
+`LEVEL_MISMATCH`, which is a product rule rather than an invariant: booking a P5
+child into a P3 class is wrong, but it does not corrupt anything.
 
 The sweeper is deliberately *repair only*: a late sweep delays availability, it
 never permits an overbooking.
