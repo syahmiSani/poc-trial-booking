@@ -40,12 +40,24 @@ INSERT INTO students (id, parent_id, name, level) VALUES
   ('S-7',  'P-4', 'Gina',   'P3'),
   ('S-8',  'P-4', 'Hakim',  'P3'),
   ('S-9',  'P-4', 'Iris',   'P3'),
-  -- Two unbooked P5 children. These are Parent A and Parent B in the
-  -- last-seat race: both are eligible for TC-102's single remaining seat.
+  -- Two named unbooked P5 children, used as Parent A and Parent B in the
+  -- readable two-party race demo.
   ('S-10', 'P-2', 'Jonas',  'P5'),
   ('S-11', 'P-3', 'Kaya',   'P5'),
   -- An unbooked P6 child, for the expired-hold fixture on TC-104.
-  ('S-12', 'P-4', 'Liam',   'P6');
+  ('S-12', 'P-4', 'Liam',   'P6'),
+  -- An unbooked P3 child, so "book a full class" can be tested WITHOUT
+  -- tripping the duplicate rule first — otherwise that test passes for the
+  -- wrong reason.
+  ('S-13', 'P-4', 'Mira',   'P3');
+
+-- Twenty unbooked P5 children (R-1 .. R-20). These are the contenders in the
+-- last-seat race on TC-102: twenty DISTINCT children competing for one seat,
+-- so the winner is decided by seat scarcity and not by the duplicate-booking
+-- index quietly rejecting most of the field.
+INSERT INTO students (id, parent_id, name, level)
+SELECT 'R-' || i, 'P-' || (1 + (i % 4)), 'Racer ' || i, 'P5'
+  FROM generate_series(1, 20) AS i;
 
 -- ---------------------------------------------------------------------------
 -- Trial classes. seats_taken is set explicitly here to match the bookings
