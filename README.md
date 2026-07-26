@@ -6,7 +6,11 @@ expiring hold, money is never captured until a seat is confirmed in a committed
 transaction, and every one of those claims is backed by a test you can run in
 under a minute.
 
-**Time spent: ~1h 50m.** See [what I cut](#what-i-deliberately-cut).
+**Time spent: ~3 hours**, tracked per working session rather than estimated
+afterwards. Roughly: 35 min on research, design and diagrams; 20 min on the
+schema and its invariants; 45 min on the booking and payment domain plus tests;
+the remainder on the REST layer, the UI, the testing console and these docs.
+See [what I cut](#what-i-deliberately-cut).
 
 ---
 
@@ -30,22 +34,54 @@ booking for the last seat, and nobody is charged for a seat they did not get.*
 
 ## Run it
 
+### Fastest, nothing to install but Docker
+
+```bash
+docker compose up
+```
+
+Pulls [`syahmisani/poc-booking:latest`](https://hub.docker.com/r/syahmisani/poc-booking)
+alongside Postgres, creates the schema, seeds it, and serves on
+**http://localhost:3000**. No Node, no npm, no migrate step. Allow about 45
+seconds the first time, most of it pulling images; a few seconds after that.
+The app logs `16 classes seeded, 0 invariant violations` when it is ready.
+
+`docker compose down` stops it. Add `-v` to throw the data away as well.
+
+Prefer to build from this source tree rather than trust the published image?
+`docker compose up --build` does exactly that.
+
+### From source, if you want to run the tests
+
+The test suite is not in the image, because it needs devDependencies and a
+database it is allowed to truncate.
+
 ```bash
 docker compose up -d db     # Postgres on :55432 (not 5432, avoids collisions)
 npm install
 npm run db:reset            # migrate + seed, prints the seat audit
-npm test                    # 27 tests, including the concurrency suite
+npm test                    # 29 tests, including the concurrency suite
 npm run dev                 # http://localhost:3000
 ```
 
 No `.env` needed, the defaults in `src/config.ts` match docker-compose. Copy
 `.env.example` if you want to change anything.
 
+One caveat if you run both: the tests truncate the same database the app uses,
+so do not run `npm test` while clicking around in the browser.
+
+| | |
+|---|---|
+| **Image** | `syahmisani/poc-booking:latest` |
+| **App** | http://localhost:3000 |
+| **Postgres** | `localhost:55432`, user/password/db all `ottodot` |
+
 | Page | What it is |
 |---|---|
 | `/` | Pick a child, pick a class, book |
 | `/bookings/:id` | Booking status + payment (choose a card outcome) |
-| `/roster/:id` | What the teacher sees before class |
+| `/roster` | Every class, with seats left |
+| `/roster/:id` | What the teacher sees before class, and where a student can be removed |
 | **`/testing`** | **Testing console, drive every scenario solo** |
 
 ---
@@ -58,7 +94,7 @@ before either writes, both correctly conclude a seat exists and both write.
 Nobody loses, they both win, and the class has 5 children in it.
 
 That means you do not need two people or two networks. You need two requests
-in flight at once, and that is manufacturable on one laptop. Four ways, in
+in flight at once, and that is manufacturable on one laptop. Four levels, in
 increasing order of how much you have to trust me:
 
 ### Level 0, two `psql` windows, no application code at all
@@ -84,7 +120,8 @@ COMMIT;
 ```
 
 Open two terminals with
-`docker compose exec db psql -U ottodot -d ottodot` and paste.
+`docker compose exec db psql -U ottodot -d ottodot` and paste. No local `psql`
+needed, it runs inside the database container.
 
 The load-bearing detail: under **READ COMMITTED**, an `UPDATE` that blocks on a
 row lock **re-evaluates its `WHERE` clause against the newly committed row**
@@ -123,6 +160,12 @@ npm test
 4. `/testing` → *Expire this hold* with tab 1's booking id → *Run hold sweeper*
 5. Tab 2 books and pays → confirmed
 6. Tab 1 pays → refused, **not charged**
+
+![ways to force the race](docs/diagrams/fig4c_test_methods.png)
+
+The levels above are ordered by how much you have to trust me. The diagram is
+the same material grouped by *mechanism*: how each one manufactures the overlap,
+and what each one is therefore able to prove.
 
 ### Make the tests fail on purpose
 
@@ -278,7 +321,7 @@ Card tokens mirror Stripe's test-card convention: `tok_ok`,
 
 ## Tests
 
-27 tests against **real Postgres**, concurrency proven against an in-memory
+29 tests against **real Postgres**, concurrency proven against an in-memory
 fake proves nothing.
 
 | File | Covers |
