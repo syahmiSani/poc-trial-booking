@@ -138,4 +138,20 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 }
 
-export const mockProvider = new MockPaymentProvider();
+/**
+ * One provider instance per SERVER, not per module bundle.
+ *
+ * Next compiles each route into its own bundle, so a plain module-level
+ * `new MockPaymentProvider()` gives /authorize and /capture separate copies of
+ * the authorization map — capture then cannot find what authorize just stored.
+ * Pinning to globalThis also survives dev hot-reloads.
+ *
+ * A real PSP keeps this state on their side; the mock has to keep it on ours.
+ */
+const globalRef = globalThis as unknown as {
+  __ottodotMockProvider?: MockPaymentProvider;
+};
+
+export const mockProvider =
+  globalRef.__ottodotMockProvider ??
+  (globalRef.__ottodotMockProvider = new MockPaymentProvider());
